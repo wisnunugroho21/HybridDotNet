@@ -5,3 +5,9 @@
       context: .
       dockerfile: WebAPI/Dockerfile
 
+  blazor:
+    image: blazor
+    build:
+      context: .
+      dockerfile: Blazor/Dockerfile
+

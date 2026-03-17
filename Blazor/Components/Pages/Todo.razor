@@ -1,0 +1,166 @@
+@page "/todo"
+@rendermode InteractiveServer
+
+@using Microsoft.EntityFrameworkCore
+@using General.Data
+
+@inject IDbContextFactory<AppDbContext> Db
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+	<h2>Todo</h2>
+	@if (PageItemId == PAGE_INDEX_LIST)
+	{
+		<button type="button" class="btn btn-primary" @onclick="() => PageItemId = PAGE_INDEX_CREATE">Add Item</button>
+	}     
+</div>
+
+@if (PageItemId == PAGE_INDEX_LIST)
+{
+	<table class="table table-striped table-hover table-bordered">
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>Done</th>
+				<th>Action</th>
+			</tr>
+		</thead>
+		<tbody class="table-group-divider">
+			@foreach (var item in Items)
+			{
+				var id = item.Id;
+
+				<tr>
+					<td>
+						@item.Name
+					</td>
+					<td>
+						@item.IsComplete
+					</td>
+					<td>
+						<div class="d-flex justify-content-start gap-3">
+						<button type="button" class="btn btn-warning" @onclick="() => EditItem(id)">
+							Edit
+						</button>
+						<button type="button" class="btn btn-danger" @onclick="() => DeleteItem(id)">
+							Delete
+						</button>
+						</div>
+					</td>
+				</tr>
+			}          
+		</tbody>
+	</table>
+}
+
+else
+{
+	<div class="card" style="max-width: 50rem;">
+		<div class="card-body">
+			<div class="row gap-3">
+				<div class="col-12">
+					<label for="title" class="form-label">Title</label>
+					<input @bind="InputtedItem?.Name" type="text" class="form-control" id="title"/>
+				</div>
+				<div class="col-12">
+					<div class="form-check">
+						<input @bind="InputtedItem.IsComplete" class="form-check-input" type="checkbox" id="isDone"/>
+						<label class="form-check-label" for="isDone">
+							Is Done
+						</label>
+					</div>
+				</div>
+				<div class="col-12 d-flex justify-content-end gap-2">
+					<button type="button" class="btn btn-primary" @onclick="() => PageItemId = PAGE_INDEX_LIST">Back</button>
+					<button type="button" class="btn btn-success" @onclick="SubmitItem">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+@code {
+    private const int PAGE_INDEX_LIST = -2;
+
+    private const int PAGE_INDEX_CREATE = -1;
+
+    private long PageItemId { get; set; } = -2;
+
+    private List<General.Data.Types.Todo> Items { get; set; } = [];
+
+    private General.Data.Types.Todo? InputtedItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+	    await using var context = await Db.CreateDbContextAsync();
+	    Items = await context.Todos.ToListAsync();
+
+	    InputtedItem = new General.Data.Types.Todo()
+		{
+			Name = "",
+			IsComplete = false
+		};
+    }
+
+	private async Task EditItem(long id)
+	{
+		await using var context = await Db.CreateDbContextAsync();
+		var item = await context.Todos.FirstOrDefaultAsync(x => x.Id == id);
+
+		if (item is not null)
+		{
+			InputtedItem?.Name = item.Name;
+			InputtedItem?.IsComplete = item.IsComplete;
+
+			PageItemId = id;
+		}
+	}
+
+	private async Task DeleteItem(long id)
+	{
+		await using var context = await Db.CreateDbContextAsync();
+		var item = await context.Todos.FirstOrDefaultAsync(x => x.Id == id);
+
+		if (item is not null)
+		{
+			context.Todos.Remove(item);
+			await context.SaveChangesAsync();
+
+			Items = await context.Todos.ToListAsync();
+		}
+	}
+
+	private async Task SubmitItem()
+	{
+		await using var context = await Db.CreateDbContextAsync();
+
+		if (PageItemId == PAGE_INDEX_CREATE)
+		{
+			await context.Todos.AddAsync(new General.Data.Types.Todo
+			{
+				Name = InputtedItem?.Name,
+				IsComplete = InputtedItem?.IsComplete ?? false
+			});
+		}
+
+		else
+		{
+			var item = await context.Todos.FirstOrDefaultAsync(x => x.Id == PageItemId);
+
+			if (item is not null)
+			{
+				item.Name = InputtedItem?.Name;
+				item.IsComplete = InputtedItem?.IsComplete ?? false;
+
+				context.Todos.Update(item);
+			}      
+		}
+
+		await context.SaveChangesAsync();
+
+		InputtedItem?.Name = "";
+		InputtedItem?.IsComplete = false;
+
+		Items = await context.Todos.ToListAsync();
+		PageItemId = PAGE_INDEX_LIST;
+	}
+}
