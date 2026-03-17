@@ -1,0 +1,46 @@
+@WebAPI_HostAddress = http://localhost:5072
+
+GET {{WebAPI_HostAddress}}/todos/
+Accept: application/json
+
+###
+
+GET {{WebAPI_HostAddress}}/todos?skip=0&take=1&filters=[{"field":"name","logic": "and", "constraints": [{"operator":"starts-with", "keyword":"Go"}]}]
+Accept: application/json
+
+###
+
+POST {{WebAPI_HostAddress}}/todos/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "todo": {
+    "name": "Walk dog",
+    "isComplete": true
+  }
+}
+
+###
+
+PUT {{WebAPI_HostAddress}}/todos/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "todo": {
+    "name": "Walk dog",
+    "isComplete": true,
+    "id": 1
+  }
+}
+
+###
+
+GET {{WebAPI_HostAddress}}/todos/1
+Accept: application/json
+
+###
+
+DELETE {{WebAPI_HostAddress}}/todos/1
+Accept: application/json
