@@ -11,3 +11,9 @@
       context: .
       dockerfile: Blazor/Dockerfile
 
+  blazor-1:
+    image: blazor-1
+    build:
+      context: .
+      dockerfile: Blazor/Dockerfile
+
